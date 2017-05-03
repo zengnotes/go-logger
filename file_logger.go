@@ -12,34 +12,34 @@ import (
 
 // This log writer sends output to a file
 type FileLogWriter struct {
-	mu  sync.Mutex
-	rec chan *LogRecord
-	rot chan bool
+	mu                sync.Mutex
+	rec               chan *LogRecord
+	rot               chan bool
 
 	// The opened file
-	filename string
-	file     *os.File
+	filename          string
+	file              *os.File
 
 	// The logging format
-	format string
+	format            string
 
 	// File header/trailer
-	header, trailer string
+	header, trailer   string
 
 	// Rotate at linecount
 	maxlines          int
 	maxlines_curlines int
 
 	// Rotate at size
-	maxsize         int
-	maxsize_cursize int
+	maxsize           int
+	maxsize_cursize   int
 
 	// Rotate daily
-	daily          bool
-	daily_opendate int
+	daily             bool
+	daily_opendate    int
 
 	// Keep old logfiles (.001, .002, etc)
-	rotate bool
+	rotate            bool
 }
 
 type formatCacheType struct {
@@ -79,7 +79,7 @@ func FormatLogRecord(format string, rec *LogRecord) string {
 		updated := &formatCacheType{
 			LastUpdateSeconds: secs,
 			shortTime:         fmt.Sprintf("%02d:%02d", hour, minute),
-			shortDate:         fmt.Sprintf("%02d/%02d/%02d", day, month, year%100),
+			shortDate:         fmt.Sprintf("%02d/%02d/%02d", day, month, year % 100),
 			longTime:          fmt.Sprintf("%02d:%02d:%02d %s", hour, minute, second, zone),
 			longDate:          fmt.Sprintf("%04d/%02d/%02d", year, month, day),
 		}
@@ -184,14 +184,14 @@ func NewFileLogWriter(fname string, rotate bool) *FileLogWriter {
 					}
 				}
 
-				// Perform the write
+			// Perform the write
 				n, err := fmt.Fprint(w.file, FormatLogRecord(w.format, rec))
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "FileLogWriter(%q): %s\n", w.filename, err)
 					return
 				}
 
-				// Update the counts
+			// Update the counts bytes
 				w.maxlines_curlines++
 				w.maxsize_cursize += n
 			}
@@ -219,12 +219,13 @@ func (w *FileLogWriter) intRotate() error {
 	// If we are keeping log files, move it to the next available number
 	if w.rotate {
 		_, err := os.Lstat(w.filename)
-		if err == nil { // file exists
+		if err == nil {
+			// file exists
 			// Find the next available number
 			var num int64 = 1
 			fname := ""
-			for ; err == nil && num <= (1<<31); num++ {
-				fname = w.filename + fmt.Sprintf(".%s.%03d", time.Now().Format("2006-01-02"), num)
+			for ; err == nil && num <= (1 << 31); num++ {
+				fname = w.filename + fmt.Sprintf("_%s_%03d", time.Now().Format("2006-01-02"), num)
 				_, err = os.Lstat(fname)
 			}
 			// return error if the last file checked still existed
@@ -240,7 +241,7 @@ func (w *FileLogWriter) intRotate() error {
 		}
 	}
 	// Open the log file
-	fd, err := os.OpenFile(w.filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0660)
+	fd, err := os.OpenFile(w.filename, os.O_WRONLY | os.O_APPEND | os.O_CREATE, 0660)
 	if err != nil {
 		return err
 	}
